@@ -58,7 +58,7 @@ float nan(int p)
 	v.p = p | 0x7FC00000U;
 	return v.q;
 }
-
+/*
 float fmax(float p, float q)
 {
 	if (p != p)
@@ -80,7 +80,7 @@ float fmin(float p, float q)
 		return p;
 	return q;
 }
-
+*/
 
 float2 fmax(float2 p, float2 q)
 {
