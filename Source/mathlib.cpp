@@ -58,7 +58,8 @@ float nan(int p)
 	v.p = p | 0x7FC00000U;
 	return v.q;
 }
-/*
+
+#ifndef SYS_WINDOWS
 float fmax(float p, float q)
 {
 	if (p != p)
@@ -80,7 +81,7 @@ float fmin(float p, float q)
 		return p;
 	return q;
 }
-*/
+#endif
 
 float2 fmax(float2 p, float2 q)
 {
