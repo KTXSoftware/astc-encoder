@@ -463,8 +463,8 @@ void encode_astc_image(const astc_codec_image * input_image,
 }
 
 
-void store_astc_file(const astc_codec_image * input_image,
-					 const char *filename, int xdim, int ydim, int zdim, const error_weighting_params * ewp, astc_decode_mode decode_mode, swizzlepattern swz_encode, int threadcount)
+void store_astc_file(const astc_codec_image * input_image, int *out_width, int *out_height,
+	int *out_size, void **out_data, int xdim, int ydim, int zdim, const error_weighting_params * ewp, astc_decode_mode decode_mode, swizzlepattern swz_encode, int threadcount)
 {
 	int xsize = input_image->xsize;
 	int ysize = input_image->ysize;
@@ -475,6 +475,12 @@ void store_astc_file(const astc_codec_image * input_image,
 	int zblocks = (zsize + zdim - 1) / zdim;
 
 	uint8_t *buffer = (uint8_t *) malloc(xblocks * yblocks * zblocks * 16);
+
+	*out_width = xsize;
+	*out_height = ysize;
+	*out_data = buffer;
+	*out_size = xblocks * yblocks * zblocks * 16;
+
 	if (!buffer)
 	{
 		printf("Ran out of memory\n");
@@ -506,11 +512,11 @@ void store_astc_file(const astc_codec_image * input_image,
 	hdr.zsize[1] = (zsize >> 8) & 0xFF;
 	hdr.zsize[2] = (zsize >> 16) & 0xFF;
 
-	FILE *wf = fopen(filename, "wb");
-	fwrite(&hdr, 1, sizeof(astc_header), wf);
-	fwrite(buffer, 1, xblocks * yblocks * zblocks * 16, wf);
-	fclose(wf);
-	free(buffer);
+	//FILE *wf = fopen(filename, "wb");
+	//fwrite(&hdr, 1, sizeof(astc_header), wf);
+	//fwrite(buffer, 1, xblocks * yblocks * zblocks * 16, wf);
+	//fclose(wf);
+	//free(buffer);
 }
 
 
@@ -708,7 +714,7 @@ void dump_image(astc_codec_image * img)
 }
 
 
-int astc_main(int argc, char **argv)
+int astc_main(int argc, char **argv, int width, int height, int stride, int format, unsigned char* pixels, int* out_width, int* out_height, int* out_size, void** out_data)
 {
 	int i;
 
@@ -1229,8 +1235,8 @@ int astc_main(int argc, char **argv)
 
 	int array_size = 1;
 
-	const char *input_filename = argv[2];
-	const char *output_filename = argv[3];
+	//const char *input_filename = argv[2];
+	//const char *output_filename = argv[3];
 
 	int silentmode = 0;
 	int timemode = 0;
@@ -2125,11 +2131,11 @@ int astc_main(int argc, char **argv)
 	}
 
 
-	if (opmode == 4)
-	{
-		compare_two_files(input_filename, output_filename, low_fstop, high_fstop, psnrmode);
-		exit(0);
-	}
+	//if (opmode == 4)
+	//{
+	//	compare_two_files(input_filename, output_filename, low_fstop, high_fstop, psnrmode);
+	//	exit(0);
+	//}
 
 
 	float texel_avg_error_limit_2d = 0.0f;
@@ -2251,7 +2257,7 @@ int astc_main(int argc, char **argv)
 	// determine encoding bitness as follows:
 	// if enforced by the output format, follow the output format's result
 	// else use decode_mode to pick bitness.
-	int bitness = get_output_filename_enforced_bitness(output_filename);
+	int bitness = -1; // get_output_filename_enforced_bitness(output_filename);
 	if (bitness == -1)
 	{
 		bitness = (decode_mode == DECODE_HDR) ? 16 : 8;
@@ -2285,7 +2291,8 @@ int astc_main(int argc, char **argv)
 			// 2D input data.
 			if (array_size == 1)
 			{
-				input_images[image_index] = astc_codec_load_image(input_filename, padding, &load_results[image_index]);
+				//input_images[image_index] = astc_codec_load_image(input_filename, padding, &load_results[image_index]);
+				input_images[image_index] = load_uncompressed_image(padding, &load_results[image_index], width, height, stride, format, pixels);
 			}
 
 			// 3D input data - multiple 2D images.
@@ -2294,16 +2301,16 @@ int astc_main(int argc, char **argv)
 				char new_input_filename[256];
 
 				// Check for extension: <name>.<extension>
-				if (NULL == strrchr(input_filename, '.'))
-				{
-					printf("Unable to determine file type from extension: %s\n", input_filename);
-					exit(1);
-				}
+				//if (NULL == strrchr(input_filename, '.'))
+				//{
+				//	printf("Unable to determine file type from extension: %s\n", input_filename);
+				//	exit(1);
+				//}
 
 				// Construct new file name and load: <name>_N.<extension>
-				strcpy(new_input_filename, input_filename);
-				sprintf(strrchr(new_input_filename, '.'), "_%d%s", image_index, strrchr(input_filename, '.'));
-				input_images[image_index] = astc_codec_load_image(new_input_filename, padding, &load_results[image_index]);
+				//strcpy(new_input_filename, input_filename);
+				//sprintf(strrchr(new_input_filename, '.'), "_%d%s", image_index, strrchr(input_filename, '.'));
+				//input_images[image_index] = astc_codec_load_image(new_input_filename, padding, &load_results[image_index]);
 
 				// Check image is not 3D.
 				if (input_images[image_index]->zsize != 1)
@@ -2319,18 +2326,18 @@ int astc_main(int argc, char **argv)
 			}
 
 			// Check load result.
-			if (load_results[image_index] < 0)
-			{
-				printf("Failed to load image %s\n", input_filename);
-				exit(1);
-			}
+			//if (load_results[image_index] < 0)
+			//{
+			//	printf("Failed to load image %s\n", input_filename);
+			//	exit(1);
+			//}
 
 			// Check format matches other slices.
-			if (load_results[image_index] != load_results[0])
-			{
-				printf("Mismatching image format - image 0 and %d are a different format\n", image_index);
-				exit(1);
-			}
+			//if (load_results[image_index] != load_results[0])
+			//{
+			//	printf("Mismatching image format - image 0 and %d are a different format\n", image_index);
+			//	exit(1);
+			//}
 		}
 
 		load_result = load_results[0];
@@ -2404,8 +2411,8 @@ int astc_main(int argc, char **argv)
 
 		if (!silentmode)
 		{
-			printf("%s: %dD %s image, %d x %d x %d, %d components\n\n",
-				   input_filename, input_image->zsize > 1 ? 3 : 2, input_image_is_hdr ? "HDR" : "LDR", input_image->xsize, input_image->ysize, input_image->zsize, load_result & 7);
+			//printf("%s: %dD %s image, %d x %d x %d, %d components\n\n",
+			//	   input_filename, input_image->zsize > 1 ? 3 : 2, input_image_is_hdr ? "HDR" : "LDR", input_image->xsize, input_image->ysize, input_image->zsize, load_result & 7);
 		}
 
 		if (padding > 0 || ewp.rgb_mean_weight != 0.0f || ewp.rgb_stdev_weight != 0.0f || ewp.alpha_mean_weight != 0.0f || ewp.alpha_stdev_weight != 0.0f)
@@ -2427,8 +2434,8 @@ int astc_main(int argc, char **argv)
 
 	start_coding_time = get_time();
 
-	if (opmode == 1)
-		output_image = load_astc_file(input_filename, bitness, decode_mode, swz_decode);
+	//if (opmode == 1)
+	//	output_image = load_astc_file(input_filename, bitness, decode_mode, swz_decode);
 
 
 	// process image, if relevant
@@ -2455,24 +2462,25 @@ int astc_main(int argc, char **argv)
 		int store_result = -1;
 		const char *format_string = "";
 
-		store_result = astc_codec_store_image(output_image, output_filename, bitness, &format_string);
+		//store_result = astc_codec_store_image(output_image, output_filename, bitness, &format_string);
 
-		if (store_result < 0)
-		{
-			printf("Failed to store image %s\n", output_filename);
-			exit(1);
-		}
-		else
-		{
-			if (!silentmode)
-			{
-				printf("Stored %s image %s with %d color channels\n", format_string, output_filename, store_result);
-			}
-		}
+		//if (store_result < 0)
+		//{
+		//	printf("Failed to store image %s\n", output_filename);
+		//	exit(1);
+		//}
+		//else
+		//{
+		//	if (!silentmode)
+		//	{
+		//		printf("Stored %s image %s with %d color channels\n", format_string, output_filename, store_result);
+		//	}
+		//}
 	}
 	if (opmode == 0)
 	{
-		store_astc_file(input_image, output_filename, xdim, ydim, zdim, &ewp, decode_mode, swz_encode, thread_count);
+		store_astc_file(input_image, out_width, out_height, out_size, out_data, xdim, ydim, zdim, &ewp, decode_mode, swz_encode, thread_count);
+		
 	}
 
 

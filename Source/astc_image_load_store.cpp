@@ -1263,7 +1263,32 @@ void compute_error_metrics(int compute_hdr_error_metrics, int input_components, 
 	This image loader will choose one based on filename.
 */
 
+astc_codec_image *load_uncompressed_image(int padding, int *result, int width, int height, int stride, int format, unsigned char* pixels)
+{
+	astc_codec_image *astc_img = NULL;
+	astc_img = allocate_image(8, width, height, 1, padding);
+	bool y_flip = false;
 
+	for (int y = 0; y < height; y++)
+	{
+		int y_dst = y + padding;
+		int y_src = y_flip ? (height - y - 1) : y;
+		uint8_t *src = pixels + 4 * width * y_src;
+
+		for (int x = 0; x < width; x++)
+		{
+			int x_dst = x + padding;
+			astc_img->imagedata8[0][y_dst][4 * x_dst] = src[4 * x];
+			astc_img->imagedata8[0][y_dst][4 * x_dst + 1] = src[4 * x + 1];
+			astc_img->imagedata8[0][y_dst][4 * x_dst + 2] = src[4 * x + 2];
+			astc_img->imagedata8[0][y_dst][4 * x_dst + 3] = src[4 * x + 3];
+		}
+	}
+	fill_image_padding_area(astc_img);
+	int components = 4;
+	*result = components;
+	return astc_img;
+}
 
 astc_codec_image *astc_codec_load_image(const char *input_filename, int padding, int *load_result)
 {
