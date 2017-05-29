@@ -1263,7 +1263,7 @@ void compute_error_metrics(int compute_hdr_error_metrics, int input_components, 
 	This image loader will choose one based on filename.
 */
 
-astc_codec_image *load_uncompressed_image(int padding, int *result, int width, int height, int stride, int format, unsigned char* pixels)
+astc_codec_image *load_uncompressed_image(int padding, int *result, int width, int height, int stride, const char* format, unsigned char* pixels)
 {
 	astc_codec_image *astc_img = NULL;
 	astc_img = allocate_image(8, width, height, 1, padding);

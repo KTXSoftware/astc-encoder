@@ -714,7 +714,7 @@ void dump_image(astc_codec_image * img)
 }
 
 
-int astc_main(int argc, char **argv, int width, int height, int stride, int format, unsigned char* pixels, int* out_width, int* out_height, int* out_size, void** out_data)
+int astc_main(int argc, char **argv, int width, int height, int stride, const char* format, unsigned char* pixels, int* out_width, int* out_height, int* out_size, void** out_data)
 {
 	int i;
 
